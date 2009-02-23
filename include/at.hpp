@@ -64,23 +64,31 @@ namespace at
     public:
         window(int width=80, int height=24);
         window(SDL_Surface *surface);
+        window(const window &win);
         virtual ~window();
         
         virtual int width() const;
         virtual int height() const;
+    
+        virtual void bgcolor(Uint32 bg);
+        virtual Uint32 bgcolor() const;
         
-        virtual void addch(int x, int y, char c, Uint32 fg, Uint32 bg=color::black);
-        virtual void addstr(int x, int y, const char * str,
-            Uint32 fg, Uint32 bg=color::black);
+        virtual void addch(int x, int y, char c, Uint32 fg);
+        virtual void addch(int x, int y, char c, Uint32 fg, Uint32 bg);
+        virtual void addstr(int x, int y, const char * str, Uint32 fg);
+        virtual void addstr(int x, int y, const char * str, Uint32 fg, Uint32 bg);
+        virtual void blit(int x, int y, const window &win);
         
         virtual void update();
         virtual void clear();
     
+        window &operator =(const window &win);
     protected:
         Uint32 _get_pixel(int x, int y) const;
         void   _set_pixel(int x, int y, Uint32 p);
     
         SDL_Surface *surface_;
+        Uint32 bgcolor_;
     };
     extern window *stdwin;
     
@@ -103,26 +111,9 @@ namespace at
     // Returns a key.
     key getkey();
     
- 
     bool is_running();
 
     void stop_running();
-    
-    inline void cell_to_screen(int x, int y, int *nx, int *ny)
-    {
-        if (nx)
-            *nx = x * FONT_WIDTH;
-        if (ny)
-            *ny = y * FONT_HEIGHT;
-    }
-    
-    inline void screen_to_cell(int x, int y, int *nx, int *ny)
-    {
-        if (nx)
-            *nx = x / FONT_WIDTH;
-        if (ny)
-            *ny = y / FONT_HEIGHT;
-    }
 } // namespace at
 
 #endif // AT_HPP

@@ -26,6 +26,7 @@
 #include <SDL/SDL.h>
 
 #include "at.hpp"
+#include "at_internal.hpp"
 
 namespace at
 {
@@ -38,7 +39,7 @@ namespace at
             return NULL;
         
         
-        cell_to_screen(width, height, &scr_width, &scr_height);
+        _cell_to_screen(width, height, &scr_width, &scr_height);
         stdwin = new window(SDL_SetVideoMode(scr_width, scr_height, 32, flags));
         
         if (stdwin == NULL)

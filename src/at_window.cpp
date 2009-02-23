@@ -26,6 +26,7 @@
 #include <SDL/SDL.h>
 
 #include "at.hpp"
+#include "at_internal.hpp"
 
 namespace at
 {
@@ -33,18 +34,26 @@ namespace at
     
     window *stdwin = NULL;
     
-    window::window(int width, int height)
+    window::window(int width, int height) :
+    bgcolor_(color::black)
     {
         int scr_width, scr_height;
         
-        cell_to_screen(width, height, &scr_width, &scr_height);
+        _cell_to_screen(width, height, &scr_width, &scr_height);
         surface_ = SDL_CreateRGBSurface(SDL_SWSURFACE, scr_width, scr_height,
             32, 0, 0, 0, 0);
     }
     
-    window::window(SDL_Surface *surface)
+    window::window(SDL_Surface *surface) :
+    bgcolor_(color::black)
     {
         surface_ = surface;
+    }
+    
+    window::window(const window &win) :
+    surface_(NULL), bgcolor_(color::black)
+    {
+        *this = win;
     }
     
     window::~window()
@@ -58,7 +67,7 @@ namespace at
         assert(surface_ != NULL);
         
         int width;
-        screen_to_cell(surface_->w, surface_->h, &width, NULL);
+        _screen_to_cell(surface_->w, surface_->h, &width, NULL);
         
         return width;
     }
@@ -68,9 +77,25 @@ namespace at
         assert(surface_ != NULL);
         
         int height;
-        screen_to_cell(surface_->w, surface_->h, NULL, &height);
+        _screen_to_cell(surface_->w, surface_->h, NULL, &height);
         
         return height;
+    }
+    
+    void window::bgcolor(Uint32 bg)
+    {
+        bgcolor_ = bg;
+        clear();
+    }
+    
+    Uint32 window::bgcolor() const
+    {
+        return bgcolor_;
+    }
+    
+    void window::addch(int x, int y, char c, Uint32 fg)
+    {
+        addch(x, y, c, fg, bgcolor_);
     }
     
     void window::addch(int x, int y, char c, Uint32 fg, Uint32 bg)
@@ -79,7 +104,7 @@ namespace at
     
         int nx, ny;
         
-        cell_to_screen(x, y, &nx, &ny);
+        _cell_to_screen(x, y, &nx, &ny);
         
         for (y = 0; y < FONT_HEIGHT; ++y) {
             for (x = 0; x < FONT_WIDTH; ++x) {
@@ -90,7 +115,12 @@ namespace at
             }
         }
     }
-
+    
+    void window::addstr(int x, int y, const char * str, Uint32 fg)
+    {
+        addstr(x, y, str, fg, bgcolor_);
+    }
+    
     void window::addstr(int x, int y, const char * str, Uint32 fg, Uint32 bg)
     {
         unsigned int len = strlen(str);
@@ -105,6 +135,15 @@ namespace at
         }
     }
     
+    void window::blit(int x, int y, const window &win)
+    {
+        SDL_Rect xy;
+        
+        _cell_to_screen(x, y, (int *)&xy.x, (int *)&xy.y);
+        
+        SDL_BlitSurface(win.surface_, NULL, surface_, &xy);
+    }
+    
     void window::update()
     {
         SDL_Flip(surface_);
@@ -112,7 +151,24 @@ namespace at
     
     void window::clear()
     {
-        SDL_FillRect(surface_, NULL, 0);
+        SDL_FillRect(surface_, NULL, bgcolor_);
+    }
+    
+    window &window::operator =(const window &win)
+    {
+        if (this != &win)
+        {
+            if (surface_ != NULL)
+                SDL_FreeSurface(surface_);
+
+            // Copy the surface.
+            if (win.surface_ != NULL)
+                surface_ = SDL_DisplayFormat(win.surface_);
+
+            // Copy data.
+            bgcolor_ = win.bgcolor_;
+        }
+        return *this;
     }
     
     Uint32 window::_get_pixel(int x, int y) const

@@ -33,10 +33,18 @@ int main()
     int x = 0, y = 0;
     std::string s = "HELLO!";
 
+    at::window win(20, 20);
+    win.bgcolor(at::color::blue);
+    win.clear();
+    win.update();
+    
+    at::window nw = win;
+    
     while (at::is_running())
     {
         at::clear();
         at::stdwin->addstr(x, y, s.c_str(), at::color::blue);
+        at::stdwin->blit(40, 0, nw);
         at::update();
         at::key key = at::getkey();
         

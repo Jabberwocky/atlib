@@ -40,15 +40,69 @@ namespace at
             // KEYS
             case SDL_KEYDOWN:
                 // Character representations.
-                if (ev->key.keysym.sym >= 33 && ev->key.keysym.sym <= 127)
+                if (ev->key.keysym.sym >= 32 && ev->key.keysym.sym <= 127)
                 {
                     // Allows capital letters.
                     if (mod & KMOD_LSHIFT || mod & KMOD_RSHIFT)
-                        return (key)toupper(ev->key.keysym.sym);
+                    {
+                        if (isalpha(ev->key.keysym.sym))
+                            return (key)toupper(ev->key.keysym.sym);
+                        else // Numbers and other stuff.
+                        {
+                            switch (ev->key.keysym.sym)
+                            {
+                                case '`':
+                                    return (key)'~';
+                                case '1':
+                                    return (key)'!';
+                                case '2':
+                                    return (key)'@';
+                                case '3':
+                                    return (key)'#';
+                                case '4':
+                                    return (key)'$';
+                                case '5':
+                                    return (key)'%';
+                                case '6':
+                                    return (key)'^';
+                                case '7':
+                                    return (key)'&';
+                                case '8':
+                                    return (key)'*';
+                                case '9':
+                                    return (key)'(';
+                                case '0':
+                                    return (key)')';
+                                case '-':
+                                    return (key)'_';
+                                case '=':
+                                    return (key)'+';
+                                case '[':
+                                    return (key)'{';
+                                case ']':
+                                    return (key)'}';
+                                case '\\':
+                                    return (key)'|';
+                                case ';':
+                                    return (key)':';
+                                case '\'':
+                                    return (key)'"';
+                                case ',':
+                                    return (key)'<';
+                                case '.':
+                                    return (key)'>';
+                                case '/':
+                                    return (key)'?';
+                                default:
+                                    return ATK_NONE;
+                            }
+                        }
+                    }
                     else
                         return (key)ev->key.keysym.sym;
                 }
-
+                
+                // Non-characters.
                 switch (ev->key.keysym.sym)
                 {
                     case SDLK_UP:
