@@ -50,9 +50,6 @@ namespace at
         
         SDL_WM_SetCaption(title, NULL);
         
-        // Initialize color.
-        color::init();
-        
         return stdwin;
     }
     

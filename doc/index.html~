@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>atlib</title>
+</head>
+<body bgcolor="lightgrey">
+
+<a href="index.html">
+	<img src="images/atlib-banner.png" width="728" height="78" border="0" name="atlib" alt="atlib" align="middle">
+</a>
+
+
+<p></p>
+<h2>Introduction:</h2>
+atlib is designed to be minimalistic, but also to make it easy to expand upon. <br />
+This document shows some examples of what you could do with this tiny library. <br />
+<br />
+<b>Note: </b>Anyone experienced with curses will notice some similaraties with the name <br />
+of the functions, but be warned: x and y are passed in reverse compared to curses. <br />
+
+
+<p></p>
+<h2>First Example:</h2>
+Here is an introductory "hello world program": <br />
+<br />
+<table border="0" bgcolor="white" width="60%"><tr><td>
+<pre>
+#include "at.hpp"
+
+int main()
+{
+	at::start("Hello, world"); // Creates the window with the title "Hello, world".
+	
+	// Main loop.
+	while (at::is_running()) // Loops until the user closes the window.
+	{
+		at::addstr(0, 0, "Hello, world!", at::color_white); // Prints "Hello, world!" in white.
+		at::update(); // Updates the window.
+		
+		at::getkey(); // Must process events or the window can't be closed.
+	}
+	
+	at::stop(); // Shuts down atlib, cleaning up any memory.
+	return 0;
+}
+</pre>
+</td></tr></table>
+<br />
+To compile this program you need to link against libat.a with the option -lat. <br />
+<i>$ gcc example_1.cpp -o example_1 -lat</i> (or instead of -lat; libat.a) <br />
+
+
+<p></p>
+<h2>Using colors:</h2>
+atlib uses 32-bit color which allows for far more color options than a console. Below <br />
+is a program similar to the one above showing different colors. <br />
+<br />
+<table border="0" bgcolor="white" width="60%"><tr><td>
+<pre>
+#include "at.hpp"
+
+int main()
+{
+	at::start("Color!");
+	
+	// Crate a custom color.	
+	at::color newcolor(100, 150, 150); // R, G, B	
+	
+	while (at::is_running())
+	{
+		at::addstr(40, 12, "COLOR", at::color_red, newcolor); // newcolor is the background.
+		at::update();
+		
+		at::getkey();
+	}
+	
+	at::stop();
+	return 0;
+}
+</pre>
+</td></tr></table>
+<br />
+
+
+<p></p>
+<h2>Using windows:</h2>
+Windows are pretty much the main object in atlib, what we have been drawing on <br />
+is a window. at::stdwin is a pointer to the main window, at::addstr is shorthand <br />
+for "at::stdwin->addstr". <br />
+<br />
+To make a new window you must specify width and height, if left blank it defaults to <br />
+80x24, the default terminal size. <br />
+<br />
+<table border="0" bgcolor="white" width="60%"><tr><td>
+<pre>
+#include "at.hpp"
+
+int main()
+{
+	at::start("Windows!");
+	
+	at::color newcolor(100, 150, 150);
+	
+	// Unused window.
+	at::window win(10, 10);
+	
+	// Change the default background of the main window.
+	at::stdwin->bgcolor(newcolor);
+	
+	while (at::is_running())
+	{
+		at::addstr(40, 12, "COLOR", at::color_red);
+		at::update();
+		
+		at::getkey();
+	}
+	
+	at::stop();
+	return 0;
+}
+</pre>
+</td></tr></table>
+<br />
+
+
+<p></p>
+<h2>Using custom character:</h2>
+The embedded font system only uses a couple of the 256 available spots for <br />
+the common printable characters, leaving plenty of room for customization. <br />
+32 to 127 inclusive is predefined, but that doesn't mean those are unchangeable. <br />
+<br />
+Bellow are some beautiful (har) trees :). <br />
+<br />
+<table border="0" bgcolor="white" width="60%"><tr><td>
+<pre>
+#include "at.hpp"
+
+bool custom[at::FONT_HEIGHT][at::FONT_WIDTH] =
+{
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 1, 1, 0, 0},
+    {0, 1, 0, 0, 1, 0},
+    {1, 0, 1, 1, 0, 1},
+    {0, 1, 1, 0, 1, 0},
+    {1, 0, 1, 1, 0, 1},
+    {0, 1, 1, 0, 1, 0},
+    {0, 0, 1, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0},
+    {0, 0, 1, 0, 0, 0},
+    {0, 1, 1, 1, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0},
+};
+
+int main()
+{
+	at::start("Trees!!");
+	
+	at::set_font_char('T', custom);
+	
+	while (at::is_running())
+	{
+		at::addstr(40, 12, "T T T T = trees!", at::color_green);
+		at::update();
+		
+		at::getkey();
+	}
+	
+	at::stop();
+	return 0;
+}
+</pre>
+</td></tr></table>
+<br />
+
+</body>
+</html>

@@ -31,7 +31,7 @@ namespace at
 {
     bool running = true;
 
-    key _sdl_to_at(SDL_Event *ev)
+    key _sdl_to_at_event(SDL_Event *ev)
     {
         SDLMod mod = SDL_GetModState();
 
@@ -105,6 +105,18 @@ namespace at
                 // Non-characters.
                 switch (ev->key.keysym.sym)
                 {
+                    case SDLK_BACKSPACE:
+                        return ATK_BACKSPACE;
+                    case SDLK_TAB:
+                        return ATK_TAB;
+                    case SDLK_CLEAR:
+                        return ATK_CLEAR;
+                    case SDLK_RETURN:
+                        return ATK_RETURN;
+                    case SDLK_PAUSE:
+                        return ATK_PAUSE;
+                    case SDLK_ESCAPE:
+                        return ATK_ESCAPE;
                     case SDLK_UP:
                         return ATK_UP;
                     case SDLK_DOWN:
@@ -142,7 +154,7 @@ namespace at
         do
         {
             SDL_WaitEvent(&ev);
-            ret = _sdl_to_at(&ev);
+            ret = _sdl_to_at_event(&ev);
         } while (ret == ATK_NONE);
         
         return ret;

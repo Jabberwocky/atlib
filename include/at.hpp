@@ -33,31 +33,53 @@ namespace at
 {
     enum key
     {
+        ATK_NONE = -1,
+        
         ATK_FIRST = 0,
+        ATK_NULL = 0,
         
-        ATK_NONE = 0,
-        ATK_UP = 1,
-        ATK_DOWN = 2,
-        ATK_LEFT = 3,
-        ATK_RIGHT = 4,
-        ATK_QUIT = 5,
+        ATK_BACKSPACE = 8,
+        ATK_TAB = 9,
+        ATK_CLEAR = 12,
+        ATK_RETURN = 13,
+        ATK_PAUSE = 19,
+        ATK_ESCAPE = 27,
         
-        ATK_LAST = 5
+        ATK_QUIT = 256,
+        
+        ATK_UP = 257,
+        ATK_DOWN = 258,
+        ATK_RIGHT = 259,
+        ATK_LEFT = 260,
+        ATK_LAST = 260
     };
     
-    struct color
+    class color
     {
-        static void init();
+    public:
+        color(Uint8 r=0, Uint8 g=0, Uint8 b=0) :
+        r_(r), g_(g), b_(b)
+        { }
         
-        static Uint32 black;
-        static Uint32 blue;
-        static Uint32 cyan;
-        static Uint32 green;
-        static Uint32 magenta;
-        static Uint32 red;
-        static Uint32 yellow;
-        static Uint32 white;
+        Uint8 red() const { return r_; }
+        Uint8 green() const { return g_; }
+        Uint8 blue() const { return b_; }
+        
+        void red(Uint8 r) { r_ = r; }
+        void green(Uint8 g) { g_ = g; }
+        void blue(Uint8 b) { b_ = b; }
+    private:
+        Uint8 r_, g_, b_;
     };
+    
+    static const color color_black(0x00, 0x00, 0x00);
+    static const color color_blue(0x00, 0x00, 0xFF);
+    static const color color_cyan(0x00, 0xFF, 0xFF);
+    static const color color_green(0x00, 0xFF, 0x00);
+    static const color color_magenta(0xFF, 0x00, 0xFF);
+    static const color color_red(0xFF, 0x00, 0x00);
+    static const color color_white(0xFF, 0xFF, 0xFF);
+    static const color color_yellow(0xFF, 0xFF, 0x00);
 
     class window
     {
@@ -70,13 +92,13 @@ namespace at
         virtual int width() const;
         virtual int height() const;
     
-        virtual void bgcolor(Uint32 bg);
-        virtual Uint32 bgcolor() const;
+        virtual void bgcolor(const color &bg);
+        virtual color bgcolor() const;
         
-        virtual void addch(int x, int y, char c, Uint32 fg);
-        virtual void addch(int x, int y, char c, Uint32 fg, Uint32 bg);
-        virtual void addstr(int x, int y, const char * str, Uint32 fg);
-        virtual void addstr(int x, int y, const char * str, Uint32 fg, Uint32 bg);
+        virtual void addch(int x, int y, char c, const color &fg);
+        virtual void addch(int x, int y, char c, const color &fg, const color &bg);
+        virtual void addstr(int x, int y, const char * str, const color &fg);
+        virtual void addstr(int x, int y, const char * str, const color &fg, const color &bg);
         virtual void blit(int x, int y, const window &win);
         
         virtual void update();
@@ -88,32 +110,59 @@ namespace at
         void   _set_pixel(int x, int y, Uint32 p);
     
         SDL_Surface *surface_;
-        Uint32 bgcolor_;
+        color bgcolor_;
     };
+    
     extern window *stdwin;
     
     const int MAX_CHARS   = 256;
     const int FONT_WIDTH  = 6;
     const int FONT_HEIGHT = 13;
 
-    // Starts the console.
+    // Starts the console. Should be called before every other function.
     window *start(const char *title, int width=80, int height=24);
-
     // Ends the console.
     void stop();
-    
-    // Updates the main window.
+    // Updates the main window. Applies the changes
     void update();
-    
-    // Clear the main window.
+    // Clear the main window. Clears to the background color.
     void clear();
+    
+    // Quick version for accessing the main window.
+    inline void addch(int x, int y, char c, const color &fg)
+    {
+        stdwin->addch(x, y, c, fg);
+    }
+    
+    inline void addch(int x, int y, char c, const color &fg, const color &bg)
+    {
+        stdwin->addch(x, y, c, fg, bg);
+    }
+    
+    inline void addstr(int x, int y, const char * str, const color &fg)
+    {
+        stdwin->addstr(x, y, str, fg);
+    }
+    
+    inline void addstr(int x, int y, const char * str, const color &fg, const color &bg)
+    {
+        stdwin->addstr(x, y, str, fg, bg);
+    }
+    
+    inline void blit(int x, int y, const window &win)
+    {
+        stdwin->blit(x, y, win);
+    }
     
     // Returns a key.
     key getkey();
-    
+    // Returns true if the application is running. (no quit command)
     bool is_running();
-
+    // Makes the next call to is_running return false.
     void stop_running();
+    
+    // Sets an imbedded font character to a new one.
+    bool set_font_char(int c, bool rep[FONT_HEIGHT][FONT_WIDTH]);
 } // namespace at
 
 #endif // AT_HPP

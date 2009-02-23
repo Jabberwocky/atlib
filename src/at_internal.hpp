@@ -25,8 +25,18 @@
 #ifndef AT_INTERNAL_HPP
 #define AT_INTERNAL_HPP
 
+#include <SDL/SDL.h>
+
+#include "at.hpp"
+
 namespace at
 {
+    inline Uint32 _at_to_sdl_color(const color &c)
+    {
+        return
+        SDL_MapRGB(SDL_GetVideoSurface()->format, c.red(), c.green(), c.blue());
+    }
+    
     inline void _cell_to_screen(int x, int y, int *nx, int *ny)
     {
         if (nx)

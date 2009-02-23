@@ -28,25 +28,5 @@
 
 namespace at
 {
-    Uint32 color::black = 0;
-    Uint32 color::blue = 0;
-    Uint32 color::cyan = 0;
-    Uint32 color::green = 0;
-    Uint32 color::magenta = 0;
-    Uint32 color::red = 0;
-    Uint32 color::white = 0;
-    Uint32 color::yellow = 0;
-    
-    void color::init()
-    {
-        SDL_Surface *s = SDL_GetVideoSurface();
-        color::black = SDL_MapRGB(s->format, 0x00, 0x00, 0x00);
-        color::blue = SDL_MapRGB(s->format, 0x00, 0x00, 0xFF);
-        color::cyan = SDL_MapRGB(s->format, 0x00, 0xFF, 0xFF);
-        color::green = SDL_MapRGB(s->format, 0x00, 0xFF, 0x00);
-        color::magenta = SDL_MapRGB(s->format, 0xFF, 0x00, 0xFF);
-        color::red = SDL_MapRGB(s->format, 0xFF, 0x00, 0x00);
-        color::white = SDL_MapRGB(s->format, 0xFF, 0xFF, 0xFF);
-        color::yellow = SDL_MapRGB(s->format, 0xFF, 0xFF, 0x00);
-    }
+    // PLACEHOLDER, TODO: Add color manipulation.
 } // namespace at

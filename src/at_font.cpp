@@ -41,7 +41,7 @@
 {0,0,0,0,0,0}}
 
 namespace at
-{
+{    
     bool font[MAX_CHARS][FONT_HEIGHT][FONT_WIDTH] =
     {
         reserved, reserved, reserved, reserved, reserved,
@@ -50,7 +50,20 @@ namespace at
         reserved, reserved, reserved, reserved, reserved,
         reserved, reserved, reserved, reserved, reserved,
         reserved, reserved, reserved, reserved, reserved,
-        reserved, reserved, reserved, // 0-32
+        reserved, reserved, // 0-31
+        {{0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0}}, // 32 = ' '
         {{0,0,0,0,0,0},
          {0,0,0,0,0,0},
          {0,0,1,0,0,0},
@@ -1300,5 +1313,17 @@ namespace at
         reserved, reserved, reserved, reserved, reserved, // 248-252
         reserved, reserved, reserved, reserved            // 253-256
     };
+    
+    bool set_font_char(int c, bool rep[FONT_HEIGHT][FONT_WIDTH])
+    {
+        if (c < 0 || c >= MAX_CHARS)
+            return false;
+        
+        for (int y = 0; y < FONT_HEIGHT; ++y)
+            for (int x = 0; x < FONT_WIDTH; ++x)
+                font[c][y][x] = rep[y][x];
+        
+        return true;
+    }
 
 }  // namespace at

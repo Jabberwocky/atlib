@@ -35,7 +35,7 @@ namespace at
     window *stdwin = NULL;
     
     window::window(int width, int height) :
-    bgcolor_(color::black)
+    bgcolor_(color_black)
     {
         int scr_width, scr_height;
         
@@ -45,13 +45,13 @@ namespace at
     }
     
     window::window(SDL_Surface *surface) :
-    bgcolor_(color::black)
+    bgcolor_(color_black)
     {
         surface_ = surface;
     }
     
     window::window(const window &win) :
-    surface_(NULL), bgcolor_(color::black)
+    surface_(NULL), bgcolor_(color_black)
     {
         *this = win;
     }
@@ -82,23 +82,23 @@ namespace at
         return height;
     }
     
-    void window::bgcolor(Uint32 bg)
+    void window::bgcolor(const color &bg)
     {
         bgcolor_ = bg;
         clear();
     }
     
-    Uint32 window::bgcolor() const
+    color window::bgcolor() const
     {
         return bgcolor_;
     }
     
-    void window::addch(int x, int y, char c, Uint32 fg)
+    void window::addch(int x, int y, char c, const color &fg)
     {
         addch(x, y, c, fg, bgcolor_);
     }
     
-    void window::addch(int x, int y, char c, Uint32 fg, Uint32 bg)
+    void window::addch(int x, int y, char c, const color &fg, const color &bg)
     {
         assert(c >= 0 && c < MAX_CHARS);
     
@@ -109,19 +109,19 @@ namespace at
         for (y = 0; y < FONT_HEIGHT; ++y) {
             for (x = 0; x < FONT_WIDTH; ++x) {
                 if (font[int(c)][y][x])
-                    this->_set_pixel(x + nx, y + ny, fg);
+                    this->_set_pixel(x + nx, y + ny, _at_to_sdl_color(fg));
                 else
-                    this->_set_pixel(x + nx, y + ny, bg);
+                    this->_set_pixel(x + nx, y + ny, _at_to_sdl_color(bg));
             }
         }
     }
     
-    void window::addstr(int x, int y, const char * str, Uint32 fg)
+    void window::addstr(int x, int y, const char * str, const color &fg)
     {
         addstr(x, y, str, fg, bgcolor_);
     }
     
-    void window::addstr(int x, int y, const char * str, Uint32 fg, Uint32 bg)
+    void window::addstr(int x, int y, const char * str, const color &fg, const color &bg)
     {
         unsigned int len = strlen(str);
         for (unsigned int i = 0; i < len; ++i)
@@ -151,12 +151,12 @@ namespace at
     
     void window::clear()
     {
-        SDL_FillRect(surface_, NULL, bgcolor_);
+        SDL_FillRect(surface_, NULL, _at_to_sdl_color(bgcolor_));
     }
     
     window &window::operator =(const window &win)
     {
-        if (this != &win)
+        if (this != &win && this != stdwin)
         {
             if (surface_ != NULL)
                 SDL_FreeSurface(surface_);
