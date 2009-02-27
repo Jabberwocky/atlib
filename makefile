@@ -1,7 +1,7 @@
 CFLAGS = -c -Wall -g -I./include/
 DIR = src/
-SOURCES = $(DIR)at_color.cpp $(DIR)at_core.cpp \
-$(DIR)at_event.cpp $(DIR)at_font.cpp $(DIR)at_window.cpp
+SOURCES = $(DIR)at_core.cpp $(DIR)at_event.cpp \
+$(DIR)at_font.cpp $(DIR)at_window.cpp
 
 OBJ = $(SOURCES:.cpp=.o)
 CC = g++

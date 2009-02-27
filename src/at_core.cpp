@@ -22,7 +22,6 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <cassert>
 #include <SDL/SDL.h>
 
 #include "at.hpp"
@@ -37,7 +36,6 @@ namespace at
         
         if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
             return NULL;
-        
         
         _cell_to_screen(width, height, &scr_width, &scr_height);
         stdwin = new window(SDL_SetVideoMode(scr_width, scr_height, 32, flags));
@@ -58,18 +56,6 @@ namespace at
         if (stdwin)
             delete stdwin;
         SDL_Quit();
-    }
-    
-    void update()
-    {
-        assert(stdwin != NULL);
-        stdwin->update();
-    }
-    
-    void clear()
-    {
-        assert(stdwin != NULL);
-        stdwin->clear();
     }
 
 } // namespace at

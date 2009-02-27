@@ -9,7 +9,7 @@ bool custom[at::FONT_HEIGHT][at::FONT_WIDTH] =
     {0, 1, 1, 0, 1, 0},
     {1, 0, 1, 1, 0, 1},
     {0, 1, 1, 0, 1, 0},
-    {0, 0, 1, 0, 0, 0},
+    {0, 0, 1, 1, 0, 0},
     {0, 0, 1, 0, 0, 0},
     {0, 0, 1, 0, 0, 0},
     {0, 1, 1, 1, 0, 0},
@@ -27,7 +27,7 @@ int main()
 	while (at::is_running())
 	{
         // Draws T's which we've just replaced.
-		at::addstr(40, 12, "T T T T = trees!", at::color_green);
+		at::addstr(40, 12, "TTTTTTT = trees!", at::color_green);
 		at::update();
 		
 		at::getkey();

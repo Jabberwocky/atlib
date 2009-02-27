@@ -37,6 +37,7 @@ namespace at
         SDL_MapRGB(SDL_GetVideoSurface()->format, c.red(), c.green(), c.blue());
     }
     
+    // Converts cell locations to a screen location.
     inline void _cell_to_screen(int x, int y, int *nx, int *ny)
     {
         if (nx)
@@ -45,6 +46,7 @@ namespace at
             *ny = y * FONT_HEIGHT;
     }
     
+    // Converts screen locations to a cell location.
     inline void _screen_to_cell(int x, int y, int *nx, int *ny)
     {
         if (nx)

@@ -29,7 +29,65 @@
 
 namespace at
 {
+    // If the program is running.
     bool running = true;
+    
+    // Improves upon toupper by adding numerals.
+    int _toupper(int c)
+    {
+        if (isalpha(c))
+            return toupper(c);
+        else // Numbers and other stuff.
+        {
+            switch (c)
+            {
+                case '`':
+                    return '~';
+                case '1':
+                    return '!';
+                case '2':
+                    return '@';
+                case '3':
+                    return '#';
+                case '4':
+                    return '$';
+                case '5':
+                    return '%';
+                case '6':
+                    return '^';
+                case '7':
+                    return '&';
+                case '8':
+                    return '*';
+                case '9':
+                    return '(';
+                case '0':
+                    return ')';
+                case '-':
+                    return '_';
+                case '=':
+                    return '+';
+                case '[':
+                    return '{';
+                case ']':
+                    return '}';
+                case '\\':
+                    return '|';
+                case ';':
+                    return ':';
+                case '\'':
+                    return '"';
+                case ',':
+                    return '<';
+                case '.':
+                    return '>';
+                case '/':
+                    return '?';
+                default:
+                    return -1;
+            }
+        }
+    }
 
     key _sdl_to_at_event(SDL_Event *ev)
     {
@@ -39,65 +97,12 @@ namespace at
         {
             // KEYS
             case SDL_KEYDOWN:
-                // Character representations.
+                // Printable characters.
                 if (ev->key.keysym.sym >= 32 && ev->key.keysym.sym <= 127)
                 {
                     // Allows capital letters.
                     if (mod & KMOD_LSHIFT || mod & KMOD_RSHIFT)
-                    {
-                        if (isalpha(ev->key.keysym.sym))
-                            return (key)toupper(ev->key.keysym.sym);
-                        else // Numbers and other stuff.
-                        {
-                            switch (ev->key.keysym.sym)
-                            {
-                                case '`':
-                                    return (key)'~';
-                                case '1':
-                                    return (key)'!';
-                                case '2':
-                                    return (key)'@';
-                                case '3':
-                                    return (key)'#';
-                                case '4':
-                                    return (key)'$';
-                                case '5':
-                                    return (key)'%';
-                                case '6':
-                                    return (key)'^';
-                                case '7':
-                                    return (key)'&';
-                                case '8':
-                                    return (key)'*';
-                                case '9':
-                                    return (key)'(';
-                                case '0':
-                                    return (key)')';
-                                case '-':
-                                    return (key)'_';
-                                case '=':
-                                    return (key)'+';
-                                case '[':
-                                    return (key)'{';
-                                case ']':
-                                    return (key)'}';
-                                case '\\':
-                                    return (key)'|';
-                                case ';':
-                                    return (key)':';
-                                case '\'':
-                                    return (key)'"';
-                                case ',':
-                                    return (key)'<';
-                                case '.':
-                                    return (key)'>';
-                                case '/':
-                                    return (key)'?';
-                                default:
-                                    return ATK_NONE;
-                            }
-                        }
-                    }
+                        return (key)_toupper((int)ev->key.keysym.sym);
                     else
                         return (key)ev->key.keysym.sym;
                 }

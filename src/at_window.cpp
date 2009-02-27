@@ -22,7 +22,6 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <cassert>
 #include <SDL/SDL.h>
 
 #include "at.hpp"
@@ -35,7 +34,7 @@ namespace at
     window *stdwin = NULL;
     
     window::window(int width, int height) :
-    bgcolor_(color_black)
+    bgcolor_(COLOR_BLACK)
     {
         int scr_width, scr_height;
         
@@ -45,13 +44,13 @@ namespace at
     }
     
     window::window(SDL_Surface *surface) :
-    bgcolor_(color_black)
+    bgcolor_(COLOR_BLACK)
     {
         surface_ = surface;
     }
     
     window::window(const window &win) :
-    surface_(NULL), bgcolor_(color_black)
+    surface_(NULL), bgcolor_(COLOR_BLACK)
     {
         *this = win;
     }
@@ -125,14 +124,7 @@ namespace at
     {
         unsigned int len = strlen(str);
         for (unsigned int i = 0; i < len; ++i)
-        {
-            if (x >= width())
-            {
-                x = 0;
-                y++;
-            }
             addch(x++, y, str[i], fg, bg);
-        }
     }
     
     void window::blit(int x, int y, const window &win)

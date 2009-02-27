@@ -25,6 +25,7 @@
 #ifndef AT_HPP
 #define AT_HPP
 
+#include <cassert>
 #include <SDL/SDL_types.h>
 
 struct SDL_Surface;
@@ -54,6 +55,7 @@ namespace at
         ATK_LAST = 260
     };
     
+    // Class for managing rgb values.
     class color
     {
     public:
@@ -61,25 +63,26 @@ namespace at
         r_(r), g_(g), b_(b)
         { }
         
-        Uint8 red() const { return r_; }
-        Uint8 green() const { return g_; }
-        Uint8 blue() const { return b_; }
+        virtual Uint8 red() const { return r_; }
+        virtual Uint8 green() const { return g_; }
+        virtual Uint8 blue() const { return b_; }
         
-        void red(Uint8 r) { r_ = r; }
-        void green(Uint8 g) { g_ = g; }
-        void blue(Uint8 b) { b_ = b; }
-    private:
+        virtual void red(Uint8 r) { r_ = r; }
+        virtual void green(Uint8 g) { g_ = g; }
+        virtual void blue(Uint8 b) { b_ = b; }
+    protected:
         Uint8 r_, g_, b_;
     };
     
-    static const color color_black(0x00, 0x00, 0x00);
-    static const color color_blue(0x00, 0x00, 0xFF);
-    static const color color_cyan(0x00, 0xFF, 0xFF);
-    static const color color_green(0x00, 0xFF, 0x00);
-    static const color color_magenta(0xFF, 0x00, 0xFF);
-    static const color color_red(0xFF, 0x00, 0x00);
-    static const color color_white(0xFF, 0xFF, 0xFF);
-    static const color color_yellow(0xFF, 0xFF, 0x00);
+    // Default colors.
+    static const color COLOR_BLACK(0x00, 0x00, 0x00);
+    static const color COLOR_BLUE(0x00, 0x00, 0xFF);
+    static const color COLOR_CYAN(0x00, 0xFF, 0xFF);
+    static const color COLOR_GREEN(0x00, 0xFF, 0x00);
+    static const color COLOR_MAGENTA(0xFF, 0x00, 0xFF);
+    static const color COLOR_RED(0xFF, 0x00, 0x00);
+    static const color COLOR_WHITE(0xFF, 0xFF, 0xFF);
+    static const color COLOR_YELLOW(0xFF, 0xFF, 0x00);
 
     class window
     {
@@ -106,6 +109,7 @@ namespace at
     
         window &operator =(const window &win);
     protected:
+        // These two functions ONLY work with 32-bit color.
         Uint32 _get_pixel(int x, int y) const;
         void   _set_pixel(int x, int y, Uint32 p);
     
@@ -123,35 +127,48 @@ namespace at
     window *start(const char *title, int width=80, int height=24);
     // Ends the console.
     void stop();
-    // Updates the main window. Applies the changes
-    void update();
-    // Clear the main window. Clears to the background color.
-    void clear();
     
     // Quick version for accessing the main window.
     inline void addch(int x, int y, char c, const color &fg)
     {
+        assert(stdwin != NULL);
         stdwin->addch(x, y, c, fg);
     }
     
     inline void addch(int x, int y, char c, const color &fg, const color &bg)
     {
+        assert(stdwin != NULL);
         stdwin->addch(x, y, c, fg, bg);
     }
     
     inline void addstr(int x, int y, const char * str, const color &fg)
     {
+        assert(stdwin != NULL);
         stdwin->addstr(x, y, str, fg);
     }
     
     inline void addstr(int x, int y, const char * str, const color &fg, const color &bg)
     {
+        assert(stdwin != NULL);
         stdwin->addstr(x, y, str, fg, bg);
     }
     
     inline void blit(int x, int y, const window &win)
     {
+        assert(stdwin != NULL);
         stdwin->blit(x, y, win);
+    }
+    
+    inline void update()
+    {
+        assert(stdwin != NULL);
+        stdwin->update();
+    }
+    
+    inline void clear()
+    {
+        assert(stdwin != NULL);
+        stdwin->clear();
     }
     
     // Returns a key.
