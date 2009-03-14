@@ -123,8 +123,16 @@ namespace at
     void window::addstr(int x, int y, const char * str, const color &fg, const color &bg)
     {
         unsigned int len = strlen(str);
-        for (unsigned int i = 0; i < len; ++i)
+        for (unsigned int i = 0; i < len; ++i) {
+            if (str[i] == '\n') {
+                x = 0;
+                y++;
+            }
+            else if (str[i] == '\t') {
+                x += 4;
+            }
             addch(x++, y, str[i], fg, bg);
+        }
     }
     
     void window::blit(int x, int y, const window &win)

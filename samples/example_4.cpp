@@ -27,7 +27,7 @@ int main()
 	while (at::is_running())
 	{
         // Draws T's which we've just replaced.
-		at::addstr(40, 12, "TTTTTTT = trees!", at::color_green);
+		at::addstr(40, 12, "TTTTTTT = trees!", at::COLOR_GREEN);
 		at::update();
 		
 		at::getkey();
