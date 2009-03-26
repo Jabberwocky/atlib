@@ -1,24 +1,20 @@
-CFLAGS = -c -Wall -g -I./include/
-DIR = src/
-SOURCES = $(DIR)at_core.cpp $(DIR)at_event.cpp \
-$(DIR)at_font.cpp $(DIR)at_window.cpp
+CFLAGS = -c -Wall -g -ansi -pedantic
+LFLAGS = -lm -lSDL
+SOURCES = main.c at.c
+OBJ = $(SOURCES:.c=.o)
+CC = gcc
+EXE = sandbox
 
-OBJ = $(SOURCES:.cpp=.o)
-CC = g++
+all: $(EXE) $(SOURCES)
 
-AR = ar cr
-ARNAME = lib/libat.a
+$(EXE): $(OBJ)
+	$(CC) $(OBJ) $(LFLAGS) -o $@
 
-all: $(ARNAME) $(SOURCES)
-
-$(ARNAME): $(OBJ)
-	$(AR) $(ARNAME) $(OBJ) $(LFLAGS)
-
-.cpp.o:
+.c.o:
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -rf $(DIR)*.o $(DIR)*~
+	rm -rf *.o *~
 
 purge:
-	rm -rf $(DIR)*.o $(DIR)*~ $(ARNAME)
+	rm -rf *.o *~ $(EXE)
