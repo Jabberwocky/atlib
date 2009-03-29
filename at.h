@@ -26,6 +26,10 @@
 #ifndef AT_H
 #define AT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /******************************************************************************\
  ATLIB Event Operations
 \******************************************************************************/
@@ -183,7 +187,11 @@ enum {
 
 /* Waits for a key to be pressed.
  */
-extern int atGetKey();
+extern int atGetKey(void);
+
+/* Doesn't wait for a key to be pressed.
+ */
+extern int atGrabKey(void);
 
 /******************************************************************************\
  ATLIB Color
@@ -408,6 +416,18 @@ extern int atWindowHeight(
     AtWindow * win /* The window to determine the height of. */
 );
 
+/* Returns the absolute width of a window.
+ */
+extern int atWindowWidthAbs(
+    AtWindow * win /* The window to determine the width of. */
+);
+
+/* Returns the absolute height of a window.
+ */
+extern int atWindowHeightAbs(
+    AtWindow * win /* The window to determine the height of. */
+);
+
 /* Returns a copy of the background color to a window.
  */
 extern AtColor atWindowGetBgColor(
@@ -435,30 +455,64 @@ extern void atWindowDrawPixel(
 extern void atWindowDrawChar(
     AtWindow * win, /* The window to draw the character to. */
     int x, int y,   /* Location to draw the character. */
-    int c,          /* The character. */
     AtColor fg,   /* Foreground color. */
-    AtColor bg    /* Background color. */
+    AtColor bg,   /* Background color. */
+    int c         /* The character. */
+);
+
+/* Draws a character to a window. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atWindowDrawCharAbs(
+    AtWindow * win, /* The window to draw the character to. */
+    int x, int y,   /* Location to draw the character. */
+    AtColor fg,   /* Foreground color. */
+    AtColor bg,   /* Background color. */
+    int c         /* The character. */
 );
 
 /* Draws a string to a window.
  */
 extern void atWindowDrawString(
-    AtWindow * win,   /* The window to draw the string to. */
-    int x, int y,     /* Location to draw the string. */
-    const char * str, /* The string to draw. Must be zero-terminated. */
-    AtColor fg,     /* Foreground color. */
-    AtColor bg      /* Background color. */
+    AtWindow * win,  /* The window to draw the string to. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
+);
+
+/* Draws a string to a window. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atWindowDrawStringAbs(
+    AtWindow * win,  /* The window to draw the string to. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
 );
 
 /* Draws a string to a window, this function wraps the string at spaces if it's
  * too long for the location.
  */
 extern void atWindowDrawStringWrap(
-    AtWindow * win,   /* The window to draw the string to. */
-    int x, int y,     /* Location to draw the string. */
-    const char * str, /* The string to draw. Must be zero-terminated. */
-    AtColor fg,     /* Foreground color. */
-    AtColor bg      /* Background color. */
+    AtWindow * win,  /* The window to draw the string to. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
+);
+
+/* Draws a string to a window, this function wraps the string at spaces if it's
+ * too long for the location. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atWindowDrawStringWrapAbs(
+    AtWindow * win,  /* The window to draw the string to. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
 );
 
 /* Blits one window to another.
@@ -466,7 +520,18 @@ extern void atWindowDrawStringWrap(
 extern void atWindowBlit(
     AtWindow * dst, /* The window to blit to. */
     int x, int y,   /* The location on the destination window. */
-    AtWindow * src  /* The window to blit from. */
+    AtWindow * src, /* The window to blit from. */
+    int sx, int sy, int sw, int sh /* The area of the src window. */
+);
+
+/* Blits one window to another. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atWindowBlitAbs(
+    AtWindow * dst, /* The window to blit to. */
+    int x, int y,   /* The location on the destination window. */
+    AtWindow * src, /* The window to blit from. */
+    int sx, int sy, int sw, int sh /* The area of the src window. */
 );
 
 /* Clears a window to the background color of the window.
@@ -489,15 +554,19 @@ extern int atStart(
 
 /* Destroys the main window.
  */
-extern void atStop();
+extern void atStop(void);
 
 /* Returns 1 if the user hasn't closed the application, 0 otherwise.
  */
-extern int atIsRunning();
+extern int atIsRunning(void);
 
 /* Makes it so calls to atIsRunning return 0.
  */
-extern void atStopRunning();
+extern void atStopRunning(void);
+
+/* Returns the number of ticks since atStop was called.
+ */
+extern unsigned int atTicks(void);
 
 /**********************************************
  * Some shortcut functions for the main window.
@@ -505,15 +574,23 @@ extern void atStopRunning();
 
 /* Returns the width of the main window.
  */
-extern int atWidth();
+extern int atWidth(void);
 
 /* Returns the height of the main window.
  */
-extern int atHeight();
+extern int atHeight(void);
+
+/* Returns the absolute width of the main window.
+ */
+extern int atWidthAbs(void);
+
+/* Returns the absolute height of the main window.
+ */
+extern int atHeightAbs(void);
 
 /* Returns a copy of the background color to the main window.
  */
-extern AtColor atGetBgColor();
+extern AtColor atGetBgColor(void);
 
 /* Sets the main window's background color to a specific color.
  */
@@ -533,43 +610,88 @@ extern void atDrawPixel(
  */
 extern void atDrawChar(
     int x, int y,   /* Location to draw the character. */
-    int c,          /* The character. */
-    AtColor fg,   /* Foreground color. */
-    AtColor bg    /* Background color. */
+    AtColor fg,    /* Foreground color. */
+    AtColor bg,    /* Background color. */
+    int c          /* The character. */
 );
 
-/* Draws a string to the main window.
+/* Draws a character to the main window. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atDrawCharAbs(
+    int x, int y,   /* Location to draw the character. */
+    AtColor fg,    /* Foreground color. */
+    AtColor bg,    /* Background color. */
+    int c          /* The character. */
+);
+
+/* Draws a string to the main window. 
  */
 extern void atDrawString(
-    int x, int y,     /* Location to draw the string. */
-    const char * str, /* The string to draw. Must be zero-terminated. */
-    AtColor fg,     /* Foreground color. */
-    AtColor bg      /* Background color. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
+);
+
+/* Draws a string to the main window. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atDrawStringAbs(
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
 );
 
 /* Draws a string to the main window, this function wraps the string at spaces 
  * if it's too long for the location.
  */
 extern void atDrawStringWrap(
-    int x, int y,     /* Location to draw the string. */
-    const char * str, /* The string to draw. Must be zero-terminated. */
-    AtColor fg,     /* Foreground color. */
-    AtColor bg      /* Background color. */
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
+);
+
+/* Draws a string to the main window, this function wraps the string at spaces 
+ * if it's too long for the location. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atDrawStringWrapAbs(
+    int x, int y,    /* Location to draw the string. */
+    AtColor fg,      /* Foreground color. */
+    AtColor bg,      /* Background color. */
+    const char * str /* The string to draw. Must be zero-terminated. */
 );
 
 /* Blits one window to the main window.
  */
 extern void atBlit(
     int x, int y,   /* The location on the destination window. */
-    AtWindow * src  /* The window to blit from. */
+    AtWindow * src, /* The window to blit from. */
+    int sx, int sy, int sw, int sh /* The area of the src window, -1 is full. */
+);
+
+/* Blits one window to the main window. Uses absolute coordinates, not cell
+ * coordinates.
+ */
+extern void atBlitAbs(
+    int x, int y,   /* The location on the destination window. */
+    AtWindow * src, /* The window to blit from. */
+    int sx, int sy, int sw, int sh /* The area of the src window, -1 is full. */
 );
 
 /* Clears the main window to the background color of the window.
  */
-extern void atClear();
+extern void atClear(void);
 
 /* Updates the main window.
  */
-extern void atUpdate();
+extern void atUpdate(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* AT_H */

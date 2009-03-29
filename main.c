@@ -1,21 +1,20 @@
 #include "at.h"
+#include <string.h>
 
 int main() {
     int x, y, key;
-    AtWindow * win;
+    AtWindow * win = NULL;
 
     atStart("Test", 80, 24);
     
-    win = atWindowCreate(10, 10);
-    atSetBgColor(ATC_STDGREEN);
-    
-    x = 70, y = 0;
+    x = 0, y = 0;
     while (atIsRunning()) {
-        atBlit(x, y, win);
+        atDrawChar(0, 0, ATC_GOLD, atGetBgColor(), '@');
+        atDrawStringWrapAbs(x, y, ATC_GOLD, atGetBgColor(), "Hello, world");
     
         atUpdate();
         atClear();
-    
+
         key = atGetKey();
         
         switch (key) {
@@ -30,6 +29,18 @@ int main() {
                 break;
             case ATK_RIGHT:
                 x++;
+                break;
+            case 's':
+                y+=10;
+                break;
+            case 'w':
+                y-=10;
+                break;
+            case 'a':
+                x-=10;
+                break;
+            case 'd':
+                x+=10;
                 break;
             case 'Q':
                 atStopRunning();

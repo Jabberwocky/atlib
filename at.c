@@ -148,7 +148,7 @@ static int SDLEventToAtEvent(SDL_Event *ev)
     }
 }
 
-int atGetKey() {
+int atGetKey(void) {
     static SDL_Event ev;
     int ret;
     
@@ -160,6 +160,20 @@ int atGetKey() {
         SDL_WaitEvent(&ev);
         ret = SDLEventToAtEvent(&ev);
     } while (ret == ATK_NONE);
+    
+    return ret;
+}
+
+int atGrabKey(void) {
+    static SDL_Event ev;
+    int ret;
+    
+    /* Flushes the event queue. */
+    while (SDL_PollEvent(&ev))
+        ;
+    
+    SDL_PollEvent(&ev);
+    ret = SDLEventToAtEvent(&ev);
     
     return ret;
 }
@@ -1723,6 +1737,18 @@ int atWindowHeight(AtWindow * win) {
     return h;
 }
 
+int atWindowWidthAbs(AtWindow * win) {
+    assert(win != NULL && win->surface != NULL);
+    
+    return win->surface->w;
+}
+
+int atWindowHeightAbs(AtWindow * win) {
+    assert(win != NULL && win->surface != NULL);
+    
+    return win->surface->h;
+}
+
 AtColor atWindowGetBgColor(AtWindow * win) {
     assert(win != NULL);
     
@@ -1744,8 +1770,8 @@ void atWindowDrawPixel(AtWindow * win, int x, int y, AtColor col) {
         SET_PIXEL(win->surface, x, y, ATCOLOR_TO_SDL(col));
 }
 
-void atWindowDrawChar(AtWindow * win, int x, int y, int c,
-        AtColor fg, AtColor bg) {
+void atWindowDrawChar(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
+        int c) {
     int fx, fy;
     
     assert(c >= 0 && c < MAX_CHARS);
@@ -1755,16 +1781,39 @@ void atWindowDrawChar(AtWindow * win, int x, int y, int c,
 
     for (fy = 0; fy < AT_FONT_HEIGHT; ++fy) {
         for (fx = 0; fx < AT_FONT_WIDTH; ++fx) {
-            if (atfont[c][fy][fx])
-                SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(fg));
-            else
-                SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(bg));
+            if (x + fx >= 0 && x + fx < atWindowWidthAbs(win) &&
+                y + fy >= 0 && y + fy < atWindowHeightAbs(win)) {
+                if (atfont[c][fy][fx])
+                    SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(fg));
+                else
+                    SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(bg));
+            }
         }
     }
 }
 
-void atWindowDrawString(AtWindow * win, int x, int y, const char * str,
-        AtColor fg, AtColor bg) {
+void atWindowDrawCharAbs(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
+        int c) {
+    int fx, fy;
+    
+    assert(c >= 0 && c < MAX_CHARS);
+    assert(win != NULL && win->surface != NULL);
+
+    for (fy = 0; fy < AT_FONT_HEIGHT; ++fy) {
+        for (fx = 0; fx < AT_FONT_WIDTH; ++fx) {
+            if (x + fx >= 0 && x + fx < atWindowWidthAbs(win) &&
+                y + fy >= 0 && y + fy < atWindowHeightAbs(win)) {
+                if (atfont[c][fy][fx])
+                    SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(fg));
+                else
+                    SET_PIXEL(win->surface, fx + x, fy + y, ATCOLOR_TO_SDL(bg));
+            }
+        }
+    }
+}
+
+void atWindowDrawString(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
+        const char * str) {
     unsigned int len, i;
     
     len = strlen(str);
@@ -1778,66 +1827,179 @@ void atWindowDrawString(AtWindow * win, int x, int y, const char * str,
             x += 4;
         }
         else {
-            atWindowDrawChar(win, x, y, str[i], fg, bg);
+            atWindowDrawChar(win, x, y, fg, bg, str[i]);
             ++x;
         }
     }
 }
 
-void atWindowDrawStringWrap(AtWindow * win, int x, int y, const char * str,
-        AtColor fg, AtColor bg) {
-    unsigned int len, wordlen, i;
-    
-    assert(win != NULL);
+void atWindowDrawStringAbs(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
+        const char * str) {
+    unsigned int len, i;
     
     len = strlen(str);
-
+    
     for (i = 0; i < len; ++i) {
-        if (x >= atWindowWidth(win)) {
-            /* Wordwrap at spaces. */
-            /* TODO: Optimize this. */
-            wordlen = i;
-            while (str[wordlen] != ' ' && wordlen > 0)
-                --wordlen;
-            if (wordlen == 0) { /* Word too long for display. */
-                /* Do nothing, but continue to try and wrap. */
+        if (str[i] == '\n') {
+            x = 0;
+            y += AT_FONT_HEIGHT;
+        }
+        else if (str[i] == '\t') {
+            x += 4 * AT_FONT_WIDTH;
+        }
+        else {
+            atWindowDrawCharAbs(win, x, y, fg, bg, str[i]);
+            x += AT_FONT_WIDTH;
+        }
+    }
+}
+
+void atWindowDrawStringWrap(AtWindow * win, int x, int y,
+        AtColor fg, AtColor bg, const char * str) {
+    int wordlen, width;
+
+    assert(win != NULL);
+
+    width = (int)atWindowWidth(win);
+
+    for (; *str != '\0'; ++str) {
+        /* Try wrapping. */
+        wordlen = (int)strcspn(str + 1, " ");
+        if (x + wordlen >= width) {
+            if (wordlen >= width) {
+                /* Too long, just print it. */
+                width = 0;
+                width = ~width;
             }
             else {
-                while (str[i] != ' ') {
-                    atWindowDrawChar(win, x, y, ' ', fg, win->bgcolor);
-                    --i;
-                    --x;
-                }
                 x = 0;
                 ++y;
+                if (*str == ' ')
+                    ++str;
             }
         }
-        else if (str[i] == '\n') {
+        
+        if (*str == '\n') {
             x = 0;
             ++y;
         }
-        else if (str[i] == '\t') {
+        else if (*str == '\t') {
             x += 4;
         }
         else {
-            atWindowDrawChar(win, x, y, str[i], fg, bg);
+            atWindowDrawChar(win, x, y, fg, bg, *str);
             ++x;
+        }
+        
+        if (*(str + 1) == ' ' && x + 1 >= atWindowWidth(win)) {
+            x = 0;
+            ++y;
+            ++str;
         }
     }
 }
 
-void atWindowBlit(AtWindow * dst, int x, int y, AtWindow * src) {
-    SDL_Rect xy;
+void atWindowDrawStringWrapAbs(AtWindow * win, int x, int y,
+        AtColor fg, AtColor bg, const char * str) {
+    int wordlen, width;
+
+    assert(win != NULL);
+
+    width = (int)atWindowWidthAbs(win);
+
+    for (; *str != '\0'; ++str) {
+        /* Try wrapping. */
+        wordlen = (int)strcspn(str + 1, " ");
+        if (x + wordlen * AT_FONT_WIDTH >= width) {
+            if (wordlen * AT_FONT_WIDTH >= width) {
+                /* Too long, just print it. */
+                width = 0;
+                width = ~width;
+            }
+            else {
+                x = 0;
+                y += AT_FONT_HEIGHT;
+                if (*str == ' ')
+                    ++str;
+            }
+        }
+        
+        if (*str == '\n') {
+            x = 0;
+            y += AT_FONT_HEIGHT;
+        }
+        else if (*str == '\t') {
+            x += 4 * AT_FONT_WIDTH;
+        }
+        else {
+            atWindowDrawCharAbs(win, x, y, fg, bg, *str);
+            x += AT_FONT_WIDTH;
+        }
+        
+        if (*(str + 1) == ' ' && x + 1 >= atWindowWidthAbs(win)) {
+            x = 0;
+            y += AT_FONT_HEIGHT;
+            ++str;
+        }
+    }
+}
+
+void atWindowBlit(AtWindow * dst, int x, int y, AtWindow * src,
+        int sx, int sy, int sw, int sh) {
+    SDL_Rect loc;
+    SDL_Rect src_area;
     
     assert(dst != NULL && dst->surface != NULL);
     assert(src != NULL && src->surface != NULL);
     
     CELL_TO_SCREEN(x, y);
+    CELL_TO_SCREEN(sx, sy);
+    
+    /* Set sw and sh to max if they were -1.
+       As sw or sh become lower the size is reduced from the max,
+       like -1 is height, -2 is height - 1, -3 is height - 2. */
+    if (sw <= -1)
+        sw = atWindowWidth(src) - sx + (sw + 1);
+    if (sh <= -1)
+        sh = atWindowHeight(src) - sy + (sh + 1);
+    CELL_TO_SCREEN(sw, sh);
 
-    xy.x = x;
-    xy.y = y;
+    loc.x = x;
+    loc.y = y;
+    
+    src_area.x = sx;
+    src_area.y = sy;
+    src_area.w = sw;
+    src_area.h = sh;
+    
+    SDL_BlitSurface(src->surface, &src_area, dst->surface, &loc);
+}
 
-    SDL_BlitSurface(src->surface, NULL, dst->surface, &xy);
+void atWindowBlitAbs(AtWindow * dst, int x, int y, AtWindow * src,
+        int sx, int sy, int sw, int sh) {
+    SDL_Rect loc;
+    SDL_Rect src_area;
+    
+    assert(dst != NULL && dst->surface != NULL);
+    assert(src != NULL && src->surface != NULL);
+    
+    /* Set sw and sh to max if they were -1.
+       As sw or sh become lower the size is reduced from the max,
+       like -1 is height, -2 is height - 1, -3 is height - 2. */
+    if (sw <= -1)
+        sw = atWindowWidthAbs(src) - sx + (sw + 1);
+    if (sh <= -1)
+        sh = atWindowHeightAbs(src) - sy + (sh + 1);
+
+    loc.x = x;
+    loc.y = y;
+    
+    src_area.x = sx;
+    src_area.y = sy;
+    src_area.w = sw;
+    src_area.h = sh;
+    
+    SDL_BlitSurface(src->surface, &src_area, dst->surface, &loc);
 }
 
 void atWindowClear(AtWindow * win) {
@@ -1879,29 +2041,33 @@ int atStart(const char * title, int width, int height) {
     return 1;
 }
 
-void atStop() {
+void atStop(void) {
     if (stdwin)
         free(stdwin);
     SDL_Quit();
 }
 
-int atIsRunning() {
+int atIsRunning(void) {
     return is_running;
 }
 
-void atStopRunning() {
+void atStopRunning(void) {
     is_running = 0;
 }
 
-int atWidth() {
+unsigned int atTicks(void) {
+    return SDL_GetTicks();
+}
+
+int atWidth(void) {
     return atWindowWidth(stdwin);
 }
 
-int atHeight() {
+int atHeight(void) {
     return atWindowHeight(stdwin);
 }
 
-AtColor atGetBgColor() {
+AtColor atGetBgColor(void) {
     return atWindowGetBgColor(stdwin);
 }
 
@@ -1913,28 +2079,45 @@ void atDrawPixel(int x, int y, AtColor col) {
     atWindowDrawPixel(stdwin, x, y, col);
 }
 
-void atDrawChar(int x, int y, int c, AtColor fg, AtColor bg ) {
-    atWindowDrawChar(stdwin, x, y, c, fg, bg);
+void atDrawChar(int x, int y, AtColor fg, AtColor bg, int c) {
+    atWindowDrawChar(stdwin, x, y, fg, bg, c);
 }
 
-void atDrawString(int x, int y, const char * str, AtColor fg, AtColor bg ) {
-    atWindowDrawString(stdwin, x, y, str, fg, bg);
+void atDrawCharAbs(int x, int y, AtColor fg, AtColor bg, int c) {
+    atWindowDrawCharAbs(stdwin, x, y, fg, bg, c);
 }
 
-void atDrawStringWrap(int x, int y, const char * str,
-        AtColor fg, AtColor bg ) {
-    atWindowDrawStringWrap(stdwin, x, y, str, fg, bg);
+void atDrawString(int x, int y, AtColor fg, AtColor bg, const char * str) {
+    atWindowDrawString(stdwin, x, y, fg, bg, str);
 }
 
-void atBlit(int x, int y, AtWindow * src) {
-    atWindowBlit(stdwin, x, y, src);
+void atDrawStringAbs(int x, int y, AtColor fg, AtColor bg, const char * str) {
+    atWindowDrawStringAbs(stdwin, x, y, fg, bg, str);
 }
 
-void atClear() {
+void atDrawStringWrap(int x, int y, AtColor fg, AtColor bg,
+        const char * str) {
+    atWindowDrawStringWrap(stdwin, x, y, fg, bg, str);
+}
+
+void atDrawStringWrapAbs(int x, int y, AtColor fg, AtColor bg,
+        const char * str) {
+    atWindowDrawStringWrapAbs(stdwin, x, y, fg, bg, str);
+}
+
+void atBlit(int x, int y, AtWindow * src, int sx, int sy, int sw, int sh) {
+    atWindowBlit(stdwin, x, y, src, sx, sy, sw, sh);
+}
+
+void atBlitAbs(int x, int y, AtWindow * src, int sx, int sy, int sw, int sh) {
+    atWindowBlitAbs(stdwin, x, y, src, sx, sy, sw, sh);
+}
+
+void atClear(void) {
     atWindowClear(stdwin);
 }
 
-void atUpdate() {
+void atUpdate(void) {
     assert(stdwin != NULL);
     
     SDL_Flip(stdwin->surface);
