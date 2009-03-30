@@ -114,30 +114,7 @@ static int SDLEventToAtEvent(SDL_Event *ev)
             }
             
             /* Non-characters. */
-            switch (ev->key.keysym.sym) {
-                case SDLK_BACKSPACE:
-                    return ATK_BACKSPACE;
-                case SDLK_TAB:
-                    return ATK_TAB;
-                case SDLK_CLEAR:
-                    return ATK_CLEAR;
-                case SDLK_RETURN:
-                    return ATK_RETURN;
-                case SDLK_PAUSE:
-                    return ATK_PAUSE;
-                case SDLK_ESCAPE:
-                    return ATK_ESCAPE;
-                case SDLK_UP:
-                    return ATK_UP;
-                case SDLK_DOWN:
-                    return ATK_DOWN;
-                case SDLK_LEFT:
-                    return ATK_LEFT;
-                case SDLK_RIGHT:
-                    return ATK_RIGHT;
-                default:
-                    return ATK_NONE;
-            }
+            return ev->key.keysym.sym;
         /* MOUSE */
         case SDL_MOUSEMOTION:
         case SDL_MOUSEBUTTONDOWN:
