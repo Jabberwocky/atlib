@@ -36,6 +36,10 @@
  */
 int is_running = 1;
 
+/* Static variable for storing events.
+ */
+static SDL_Event ev;
+
 /* Improves upon toupper by adding numerals. */
 static int ToUpper(int c)
 {
@@ -149,7 +153,6 @@ static int SDLEventToAtEvent(SDL_Event *ev)
 }
 
 int atGetKey(void) {
-    static SDL_Event ev;
     int ret;
     
     /* Flushes the event queue. */
@@ -165,7 +168,6 @@ int atGetKey(void) {
 }
 
 int atGrabKey(void) {
-    static SDL_Event ev;
     int ret;
     
     /* Flushes the event queue. */
@@ -176,6 +178,37 @@ int atGrabKey(void) {
     ret = SDLEventToAtEvent(&ev);
     
     return ret;
+}
+
+AtMouse atGrabMouse(void) {
+    Uint8 status;
+    int x, y, relx, rely;
+    AtMouse mouse = {0, 0, 0, 0, 0};
+    
+    /* Flushes the event queue. */
+    while (SDL_PollEvent(&ev))
+        ;
+    
+    SDL_PumpEvents();
+    status = SDL_GetMouseState(&x, &y);
+    SDL_GetRelativeMouseState(&relx, &rely);
+    
+    if (status & SDL_BUTTON(1)) {
+        mouse.button |= ATM_LEFT;
+    }
+    if (status & SDL_BUTTON(2)) {
+        mouse.button |= ATM_MIDDLE;
+    }
+    if (status & SDL_BUTTON(3)) {
+        mouse.button |= ATM_RIGHT;
+    }
+    
+    mouse.x = x;
+    mouse.y = y;
+    mouse.relx = relx;
+    mouse.rely = rely;
+    
+    return mouse;
 }
 
 /******************************************************************************\
@@ -348,10 +381,6 @@ SDL_MapRGB(SDL_GetVideoSurface()->format, (c).r, (c).g, (c).b)
  ATLIB Font/Char Operations
 \******************************************************************************/
 
-/* The max number of internal font characters.
- */
-#define MAX_CHARS 256
-
 /* Used for easily filling unused spots. */
 #define reserved {{0,0,0,0,0,0},\
 {0,0,0,0,0,0},\
@@ -369,7 +398,7 @@ SDL_MapRGB(SDL_GetVideoSurface()->format, (c).r, (c).g, (c).b)
 
 /* The internal font, 1 is foreground and 0 is background.
  */
-char atfont[MAX_CHARS][AT_FONT_HEIGHT][AT_FONT_WIDTH] =
+char atfont[AT_CHAR_MAX][AT_CHAR_HEIGHT][AT_CHAR_WIDTH] =
 {
     reserved, reserved, reserved, reserved, reserved,
     reserved, reserved, reserved, reserved, reserved,
@@ -1642,18 +1671,32 @@ char atfont[MAX_CHARS][AT_FONT_HEIGHT][AT_FONT_WIDTH] =
 };
 
 int atCharIsDefined(int c) {
-    /* Just hardcode the check. */
-    return (c >= 0 && c < 32) || (c >= 128 && c < MAX_CHARS);
+    /* Checks if any other locatation except ' ' is blank, if it is
+     * then it's not defined.
+     */
+    int fx, fy;
+    
+    if (c == ' ')
+        return 1; /* Space is defined. */
+    
+    for (fy = 0; fy < AT_CHAR_HEIGHT; ++fy) {
+        for (fx = 0; fx < AT_CHAR_WIDTH; ++fx) {
+            if (atfont[c][fy][fx] != 0)
+                return 1;
+        }
+    }
+    
+    return 0;
 }
 
-int atCharSet(int c, char rep[AT_FONT_HEIGHT][AT_FONT_WIDTH]) {
+int atCharSet(int c, char rep[AT_CHAR_HEIGHT][AT_CHAR_WIDTH]) {
     int x, y;
 
-    if (c < 0 || c >= MAX_CHARS)
+    if (c < 0 || c >= AT_CHAR_MAX)
         return 0;
     
-    for (y = 0; y < AT_FONT_HEIGHT; ++y)
-        for (x = 0; x < AT_FONT_WIDTH; ++x)
+    for (y = 0; y < AT_CHAR_HEIGHT; ++y)
+        for (x = 0; x < AT_CHAR_WIDTH; ++x)
             atfont[c][y][x] = rep[y][x];
     
     return 1;
@@ -1665,8 +1708,8 @@ int atCharSet(int c, char rep[AT_FONT_HEIGHT][AT_FONT_WIDTH]) {
 
 /* Macros for converting from cell points to screen points and vise-versa.
  */
-#define CELL_TO_SCREEN(x, y) {(x) *= AT_FONT_WIDTH; (y) *= AT_FONT_HEIGHT;}
-#define SCREEN_TO_CELL(x, y) {(x) /= AT_FONT_WIDTH; (y) /= AT_FONT_HEIGHT;}
+#define CELL_TO_SCREEN(x, y) {(x) *= AT_CHAR_WIDTH; (y) *= AT_CHAR_HEIGHT;}
+#define SCREEN_TO_CELL(x, y) {(x) /= AT_CHAR_WIDTH; (y) /= AT_CHAR_HEIGHT;}
 
 /* Macros for getting/setting pixels, only works with 32-bit.
  */
@@ -1774,13 +1817,13 @@ void atWindowDrawChar(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
         int c) {
     int fx, fy;
     
-    assert(c >= 0 && c < MAX_CHARS);
+    assert(c >= 0 && c < AT_CHAR_MAX);
     assert(win != NULL && win->surface != NULL);
 
     CELL_TO_SCREEN(x, y);
 
-    for (fy = 0; fy < AT_FONT_HEIGHT; ++fy) {
-        for (fx = 0; fx < AT_FONT_WIDTH; ++fx) {
+    for (fy = 0; fy < AT_CHAR_HEIGHT; ++fy) {
+        for (fx = 0; fx < AT_CHAR_WIDTH; ++fx) {
             if (x + fx >= 0 && x + fx < atWindowWidthAbs(win) &&
                 y + fy >= 0 && y + fy < atWindowHeightAbs(win)) {
                 if (atfont[c][fy][fx])
@@ -1796,11 +1839,11 @@ void atWindowDrawCharAbs(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
         int c) {
     int fx, fy;
     
-    assert(c >= 0 && c < MAX_CHARS);
+    assert(c >= 0 && c < AT_CHAR_MAX);
     assert(win != NULL && win->surface != NULL);
 
-    for (fy = 0; fy < AT_FONT_HEIGHT; ++fy) {
-        for (fx = 0; fx < AT_FONT_WIDTH; ++fx) {
+    for (fy = 0; fy < AT_CHAR_HEIGHT; ++fy) {
+        for (fx = 0; fx < AT_CHAR_WIDTH; ++fx) {
             if (x + fx >= 0 && x + fx < atWindowWidthAbs(win) &&
                 y + fy >= 0 && y + fy < atWindowHeightAbs(win)) {
                 if (atfont[c][fy][fx])
@@ -1814,7 +1857,7 @@ void atWindowDrawCharAbs(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
 
 void atWindowDrawString(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
         const char * str) {
-    unsigned int len, i;
+    unsigned long len, i;
     
     len = strlen(str);
     
@@ -1835,21 +1878,21 @@ void atWindowDrawString(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
 
 void atWindowDrawStringAbs(AtWindow * win, int x, int y, AtColor fg, AtColor bg,
         const char * str) {
-    unsigned int len, i;
+    unsigned long len, i;
     
     len = strlen(str);
     
     for (i = 0; i < len; ++i) {
         if (str[i] == '\n') {
             x = 0;
-            y += AT_FONT_HEIGHT;
+            y += AT_CHAR_HEIGHT;
         }
         else if (str[i] == '\t') {
-            x += 4 * AT_FONT_WIDTH;
+            x += 4 * AT_CHAR_WIDTH;
         }
         else {
             atWindowDrawCharAbs(win, x, y, fg, bg, str[i]);
-            x += AT_FONT_WIDTH;
+            x += AT_CHAR_WIDTH;
         }
     }
 }
@@ -1910,15 +1953,15 @@ void atWindowDrawStringWrapAbs(AtWindow * win, int x, int y,
     for (; *str != '\0'; ++str) {
         /* Try wrapping. */
         wordlen = (int)strcspn(str + 1, " ");
-        if (x + wordlen * AT_FONT_WIDTH >= width) {
-            if (wordlen * AT_FONT_WIDTH >= width) {
+        if (x + wordlen * AT_CHAR_WIDTH >= width) {
+            if (wordlen * AT_CHAR_WIDTH >= width) {
                 /* Too long, just print it. */
                 width = 0;
                 width = ~width;
             }
             else {
                 x = 0;
-                y += AT_FONT_HEIGHT;
+                y += AT_CHAR_HEIGHT;
                 if (*str == ' ')
                     ++str;
             }
@@ -1926,19 +1969,19 @@ void atWindowDrawStringWrapAbs(AtWindow * win, int x, int y,
         
         if (*str == '\n') {
             x = 0;
-            y += AT_FONT_HEIGHT;
+            y += AT_CHAR_HEIGHT;
         }
         else if (*str == '\t') {
-            x += 4 * AT_FONT_WIDTH;
+            x += 4 * AT_CHAR_WIDTH;
         }
         else {
             atWindowDrawCharAbs(win, x, y, fg, bg, *str);
-            x += AT_FONT_WIDTH;
+            x += AT_CHAR_WIDTH;
         }
         
         if (*(str + 1) == ' ' && x + 1 >= atWindowWidthAbs(win)) {
             x = 0;
-            y += AT_FONT_HEIGHT;
+            y += AT_CHAR_HEIGHT;
             ++str;
         }
     }
@@ -2017,7 +2060,7 @@ void atWindowClear(AtWindow * win) {
 static AtWindow * stdwin = NULL;
 
 int atStart(const char * title, int width, int height) {
-    unsigned int flags = SDL_SWSURFACE | SDL_DOUBLEBUF;
+    unsigned long flags = SDL_SWSURFACE | SDL_DOUBLEBUF;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
         return 0;
@@ -2055,8 +2098,40 @@ void atStopRunning(void) {
     is_running = 0;
 }
 
-unsigned int atTicks(void) {
+unsigned long atMili(void) {
     return SDL_GetTicks();
+}
+
+void atDelay(unsigned long mili) {
+    SDL_Delay(mili);
+}
+
+int atGetCursor(void) {
+    if (SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE)
+        return AT_CURSORVISIBLE;
+    return AT_CURSORINVISIBLE;
+}
+
+void atSetCursor(int cur) {
+    if (cur == AT_CURSORVISIBLE)
+        SDL_ShowCursor(SDL_ENABLE);
+    else
+        SDL_ShowCursor(SDL_DISABLE);
+}
+
+void atToggleFullScreen(void) {
+    assert(stdwin != NULL && stdwin->surface != NULL);
+    SDL_WM_ToggleFullScreen(stdwin->surface);
+}
+
+void atSetTitle(const char * title) {
+    SDL_WM_SetCaption(title, NULL);
+}
+
+const char * atGetTitle(void) {
+    static char * title;
+    SDL_WM_GetCaption(&title, NULL);
+    return title;
 }
 
 int atWidth(void) {

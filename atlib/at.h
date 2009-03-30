@@ -184,6 +184,20 @@ enum {
 	ATK_LAST
 };
 
+#define ATM_LEFT (1 << 0)
+#define ATM_MIDDLE (1 << 1)
+#define ATM_RIGHT (1 << 2)
+
+/* An AtMouse event.
+ */
+typedef struct AtMouse {
+    int x, y;             /* The cell location on the screen. */
+    int xabs, yabs;       /* The absolute location on the screen. */
+    int relx, rely;       /* Relative with respect to the last location. */
+    int relxabs, relyabs; /* Relative with respect to the last abs location. */
+    int button;           /* Multiple buttons might be pressed. */
+} AtMouse;
+
 
 /* Waits for a key to be pressed.
  */
@@ -192,6 +206,10 @@ extern int atGetKey(void);
 /* Doesn't wait for a key to be pressed.
  */
 extern int atGrabKey(void);
+
+/* Returns the current state of the mouse.
+ */
+extern AtMouse atGrabMouse(void);
 
 /******************************************************************************\
  ATLIB Color
@@ -367,11 +385,14 @@ extern const AtColor ATC_YELLOWGREEN;
 \******************************************************************************/
 
 /* Font dimensions. */
-#define AT_FONT_WIDTH  6
-#define AT_FONT_HEIGHT 13
+#define AT_CHAR_WIDTH  6
+#define AT_CHAR_HEIGHT 13
 
-/* Checks if the location, c, is an already defined character like '@'.
- *  Returns 1 if it's defined, otherwise returns 0.
+#define AT_CHAR_MAX 256
+
+/* Checks if the location, c, is an already defined character like '@'. It
+ * checks by seeing if any part of the character isn't blank, if it's not
+ * the character is not defined. (except space; ' ')
  */
 extern int atCharIsDefined(
     int c /* The character to check. */
@@ -381,7 +402,7 @@ extern int atCharIsDefined(
  */
 extern int atCharSet(
     int c,                                  /* The character to change. */
-    char rep[AT_FONT_HEIGHT][AT_FONT_WIDTH] /* The new character. */
+    char rep[AT_CHAR_HEIGHT][AT_CHAR_WIDTH] /* The new character. */
 );
 
 /******************************************************************************\
@@ -438,7 +459,7 @@ extern AtColor atWindowGetBgColor(
  */
 extern void atWindowSetBgColor(
     AtWindow * win, /* The window to set the background color of. */
-    AtColor col   /* The background color to set to. */
+    AtColor col     /* The background color to set to. */
 );
 
 /* Draws a pixel to a window.
@@ -447,7 +468,7 @@ extern void atWindowSetBgColor(
 extern void atWindowDrawPixel(
     AtWindow * win, /* The window to draw the pixel to. */
     int x, int y,   /* The location to put the pixel. */
-    AtColor col   /* The color of the pixel. */
+    AtColor col     /* The color of the pixel. */
 );
 
 /* Draws a character to a window.
@@ -455,9 +476,9 @@ extern void atWindowDrawPixel(
 extern void atWindowDrawChar(
     AtWindow * win, /* The window to draw the character to. */
     int x, int y,   /* Location to draw the character. */
-    AtColor fg,   /* Foreground color. */
-    AtColor bg,   /* Background color. */
-    int c         /* The character. */
+    AtColor fg,     /* Foreground color. */
+    AtColor bg,     /* Background color. */
+    int c           /* The character. */
 );
 
 /* Draws a character to a window. Uses absolute coordinates, not cell
@@ -466,9 +487,9 @@ extern void atWindowDrawChar(
 extern void atWindowDrawCharAbs(
     AtWindow * win, /* The window to draw the character to. */
     int x, int y,   /* Location to draw the character. */
-    AtColor fg,   /* Foreground color. */
-    AtColor bg,   /* Background color. */
-    int c         /* The character. */
+    AtColor fg,     /* Foreground color. */
+    AtColor bg,     /* Background color. */
+    int c           /* The character. */
 );
 
 /* Draws a string to a window.
@@ -544,6 +565,12 @@ extern void atWindowClear(
  ATLIB Core Operations
 \******************************************************************************/
 
+enum {
+    AT_CURSORVISIBLE,
+    AT_CURSORINVISIBLE
+};
+
+
 /* Creates the main window with a title. Returns 1 on success, 0 on failure.
  */
 extern int atStart(
@@ -566,7 +593,33 @@ extern void atStopRunning(void);
 
 /* Returns the number of ticks since atStop was called.
  */
-extern unsigned int atTicks(void);
+extern unsigned long atMili(void);
+
+/* Delays for some miliseconds.
+ */
+extern void atDelay(unsigned long mili);
+
+/* Returns the state of the mouse cursor.
+ */
+extern int atGetCursor(void);
+
+/* Toggles the mouse cursors visiblity.
+ */
+extern void atSetCursor(int cur);
+
+/* Toggles fullscreen.
+ */
+extern void atToggleFullScreen(void);
+
+/* Sets the title of the window.
+ */
+extern void atSetTitle(
+    const char * title /* The title of the window. */
+);
+
+/* Gets the title of the window.
+ */
+extern const char * atGetTitle(void);
 
 /**********************************************
  * Some shortcut functions for the main window.
@@ -602,27 +655,27 @@ extern void atSetBgColor(
  * NOTE: Doesn't use cell locations like other functions.
  */
 extern void atDrawPixel(
-    int x, int y,   /* The location to put the pixel. */
+    int x, int y, /* The location to put the pixel. */
     AtColor col   /* The color of the pixel. */
 );
 
 /* Draws a character to the main window.
  */
 extern void atDrawChar(
-    int x, int y,   /* Location to draw the character. */
-    AtColor fg,    /* Foreground color. */
-    AtColor bg,    /* Background color. */
-    int c          /* The character. */
+    int x, int y, /* Location to draw the character. */
+    AtColor fg,   /* Foreground color. */
+    AtColor bg,   /* Background color. */
+    int c         /* The character. */
 );
 
 /* Draws a character to the main window. Uses absolute coordinates, not cell
  * coordinates.
  */
 extern void atDrawCharAbs(
-    int x, int y,   /* Location to draw the character. */
-    AtColor fg,    /* Foreground color. */
-    AtColor bg,    /* Background color. */
-    int c          /* The character. */
+    int x, int y, /* Location to draw the character. */
+    AtColor fg,   /* Foreground color. */
+    AtColor bg,   /* Background color. */
+    int c         /* The character. */
 );
 
 /* Draws a string to the main window. 
@@ -668,8 +721,8 @@ extern void atDrawStringWrapAbs(
 /* Blits one window to the main window.
  */
 extern void atBlit(
-    int x, int y,   /* The location on the destination window. */
-    AtWindow * src, /* The window to blit from. */
+    int x, int y,                  /* The location on the destination window. */
+    AtWindow * src,                /* The window to blit from. */
     int sx, int sy, int sw, int sh /* The area of the src window, -1 is full. */
 );
 
@@ -677,8 +730,8 @@ extern void atBlit(
  * coordinates.
  */
 extern void atBlitAbs(
-    int x, int y,   /* The location on the destination window. */
-    AtWindow * src, /* The window to blit from. */
+    int x, int y,                  /* The location on the destination window. */
+    AtWindow * src,                /* The window to blit from. */
     int sx, int sy, int sw, int sh /* The area of the src window, -1 is full. */
 );
 
